@@ -169,6 +169,9 @@ def _default_target_configs():
             # Assume TRIM_NONLISTED_KMI="" in build.config.gki.aarch64.16k
             "trim_nonlisted_kmi": False,
             "page_size": "16k",
+            # Assume BUILD_GKI_ARTIFACTS=1
+            "build_gki_artifacts": True,
+            "gki_boot_img_sizes": gki_boot_img_sizes,
         }),
         "kernel_aarch64_interceptor": dicts.add(aarch64_common, {
             "enable_interceptor": True,
