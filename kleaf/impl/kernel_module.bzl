@@ -650,7 +650,7 @@ def _kernel_module_impl(ctx):
         ddk_headers_info,
         ddk_config_info,
         GcovInfo(
-            gcno_mapping = grab_gcno_step.outputs,
+            gcno_mapping = grab_gcno_step.gcno_mapping,
             gcno_dir = grab_gcno_step.gcno_dir,
         ),
         KernelCmdsInfo(
