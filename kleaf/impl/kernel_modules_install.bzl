@@ -18,6 +18,7 @@ A rule that runs depmod in the module installation directory.
 load("//build/kernel/kleaf:directory_with_structure.bzl", dws = "directory_with_structure")
 load(
     ":common_providers.bzl",
+    "GcovInfo",
     "KernelBuildExtModuleInfo",
     "KernelBuildInfo",
     "KernelCmdsInfo",
@@ -26,6 +27,7 @@ load(
     "KernelModuleInfo",
 )
 load(":debug.bzl", "debug")
+load(":gcov_utils.bzl", "gcov_attrs", "get_merge_gcno_step")
 load(
     ":utils.bzl",
     "kernel_utils",
@@ -164,12 +166,19 @@ def _kernel_modules_install_impl(ctx):
 
     command += dws.record(modules_staging_dws)
 
+    # --gcov related step
+    merge_gcno_step = get_merge_gcno_step(ctx, ctx.attr.kernel_modules)
+    inputs += merge_gcno_step.inputs
+    gcov_outs = merge_gcno_step.outputs
+    tools += merge_gcno_step.tools
+    command += merge_gcno_step.cmd
+
     debug.print_scripts(ctx, command)
     ctx.actions.run_shell(
         mnemonic = "KernelModulesInstall",
         inputs = depset(inputs, transitive = transitive_inputs),
         tools = depset(tools, transitive = transitive_tools),
-        outputs = external_modules + dws.files(modules_staging_dws),
+        outputs = external_modules + dws.files(modules_staging_dws) + gcov_outs,
         command = command,
         progress_message = "Running depmod {}".format(ctx.label),
     )
@@ -185,7 +194,7 @@ def _kernel_modules_install_impl(ctx):
     )
 
     return [
-        DefaultInfo(files = depset(external_modules)),
+        DefaultInfo(files = depset(external_modules + gcov_outs)),
         KernelModuleInfo(
             kernel_build_infos = kernel_build_infos,
             modules_staging_dws_depset = depset([modules_staging_dws]),
@@ -198,6 +207,10 @@ def _kernel_modules_install_impl(ctx):
                 target[KernelModuleInfo].modules_order
                 for target in ctx.attr.kernel_modules
             ], order = "postorder"),
+        ),
+        GcovInfo(
+            gcno_mapping = merge_gcno_step.gcno_mapping,
+            gcno_dir = merge_gcno_step.gcno_dir,
         ),
         cmds_info,
     ]
@@ -236,7 +249,7 @@ In `foo_dist`, specifying `foo_modules_install` in `data` won't include
 """,
     attrs = {
         "kernel_modules": attr.label_list(
-            providers = [KernelModuleInfo],
+            providers = [KernelModuleInfo, GcovInfo],
             doc = "A list of labels referring to `kernel_module`s to install.",
         ),
         "kernel_build": attr.label(
@@ -264,5 +277,5 @@ In `foo_dist`, specifying `foo_modules_install` in `data` won't include
             executable = True,
             doc = "Label referring to the script to process outputs",
         ),
-    },
+    } | gcov_attrs(),
 )
