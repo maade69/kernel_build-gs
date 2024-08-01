@@ -41,12 +41,9 @@ load(
 )
 load(":ddk/ddk_headers.bzl", "DdkHeadersInfo")
 load(":debug.bzl", "debug")
+load(":gcov_utils.bzl", "gcov_attrs", "get_grab_gcno_step")
 load(":hermetic_toolchain.bzl", "hermetic_toolchain")
-load(
-    ":kernel_build.bzl",
-    "get_grab_cmd_step",
-    "get_grab_gcno_step",
-)
+load(":kernel_build.bzl", "get_grab_cmd_step")
 load(":stamp.bzl", "stamp")
 load(":utils.bzl", "kernel_utils")
 
@@ -701,22 +698,16 @@ _kernel_module = rule(
             executable = True,
             doc = "Label referring to the script to process outputs",
         ),
-        "_print_gcno_mapping": attr.label(
-            default = Label("//build/kernel/kleaf/impl:print_gcno_mapping"),
-            cfg = "exec",
-            executable = True,
-        ),
         "_check_declared_output_list": attr.label(
             default = Label("//build/kernel/kleaf:check_declared_output_list"),
             cfg = "exec",
             executable = True,
         ),
         "_config_is_stamp": attr.label(default = "//build/kernel/kleaf:config_stamp"),
-        "_gcov": attr.label(default = "//build/kernel/kleaf:gcov"),
         "_preserve_cmd": attr.label(default = "//build/kernel/kleaf/impl:preserve_cmd"),
         "_debug_print_scripts": attr.label(default = "//build/kernel/kleaf:debug_print_scripts"),
         "_debug_modpost_warn": attr.label(default = "//build/kernel/kleaf:debug_modpost_warn"),
-    } | _kernel_module_additional_attrs(),
+    } | _kernel_module_additional_attrs() | gcov_attrs(),
     toolchains = [hermetic_toolchain.type],
 )
 
