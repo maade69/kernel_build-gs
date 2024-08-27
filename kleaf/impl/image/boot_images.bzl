@@ -18,6 +18,7 @@ Rules for building boot images.
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":common_providers.bzl", "KernelBuildInfo", "KernelEnvAndOutputsInfo")
 load(":debug.bzl", "debug")
+load(":image/image_utils.bzl", "image_utils")
 load(":image/initramfs.bzl", "InitramfsInfo")
 load(":utils.bzl", "utils")
 
@@ -168,6 +169,11 @@ def _boot_images_impl(ctx):
             avb_boot_partition_name = ctx.attr.avb_boot_partition_name,
         )
 
+    ramdisk_options = image_utils.ramdisk_options(
+        ramdisk_compression = ctx.attr.ramdisk_compression,
+        ramdisk_compression_args = ctx.attr.ramdisk_compression_args,
+    )
+
     command += """
              # Build boot images
                (
@@ -175,6 +181,11 @@ def _boot_images_impl(ctx):
                  {vendor_boot_flag_cmd}
                  {set_initramfs_var_cmd}
                  MKBOOTIMG_STAGING_DIR=$(readlink -m {mkbootimg_staging_dir})
+                 # Quote because they may contain spaces. Use double quotes because they
+                 # may be a variable.
+                 RAMDISK_COMPRESS="{ramdisk_compress}"
+                 RAMDISK_DECOMPRESS="{ramdisk_decompress}"
+                 RAMDISK_EXT="{ramdisk_ext}"
                  build_boot_images
                )
                {search_and_cp_output} --srcdir ${{DIST_DIR}} --dstdir {outdir} {outs}
@@ -189,6 +200,9 @@ def _boot_images_impl(ctx):
         boot_flag_cmd = boot_flag_cmd,
         vendor_boot_flag_cmd = vendor_boot_flag_cmd,
         set_initramfs_var_cmd = set_initramfs_var_cmd,
+        ramdisk_compress = ramdisk_options.ramdisk_compress,
+        ramdisk_decompress = ramdisk_options.ramdisk_decompress,
+        ramdisk_ext = ramdisk_options.ramdisk_ext,
     )
 
     debug.print_scripts(ctx, command)
@@ -257,6 +271,14 @@ Execute `build_boot_images` in `build_utils.sh`.""",
         ),
         "avb_boot_partition_name": attr.string(doc = """Name of the boot partition.
             Used when `avb_sign_boot_img` is True."""),
+        "ramdisk_compression": attr.string(
+            doc = "If provided it specfies the format used for any ramdisks generated." +
+                  "If not provided a fallback value from build.config is used.",
+            values = ["lz4", "gzip"],
+        ),
+        "ramdisk_compression_args": attr.string(
+            doc = "Command line arguments passed only to lz4 command to control compression level.",
+        ),
         "_debug_print_scripts": attr.label(
             default = "//build/kernel/kleaf:debug_print_scripts",
         ),

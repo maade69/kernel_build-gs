@@ -110,6 +110,9 @@ def kernel_images(
             `"boot.img"`
           - `vendor_boot.img` if `build_vendor_boot`
           - `RAMDISK_EXT=lz4`. Is used when `ramdisk_compression`(see below) is not specified.
+            - The list contains `ramdisk.<ramdisk_ext>` which means it assumes `build_boot_images`
+              generates this file. See `build_utils.sh` on conditions for when it is actually
+              generated.
           - `BOOT_IMAGE_HEADER_VERSION >= 4`, which creates `vendor-bootconfig.img` to contain
             `VENDOR_BOOTCONFIG if `build_vendor_boot`.
           - The list contains `dtb.img`
@@ -455,6 +458,8 @@ def kernel_images(
             avb_boot_key = avb_boot_key,
             avb_boot_algorithm = avb_boot_algorithm,
             avb_boot_partition_name = avb_boot_partition_name,
+            ramdisk_compression = ramdisk_compression,
+            ramdisk_compression_args = ramdisk_compression_args,
             **kwargs
         )
         all_rules.append(":{}_boot_images".format(name))
