@@ -113,8 +113,9 @@ def kernel_images(
             - The list contains `ramdisk.<ramdisk_ext>` which means it assumes `build_boot_images`
               generates this file. See `build_utils.sh` on conditions for when it is actually
               generated.
-          - `BOOT_IMAGE_HEADER_VERSION >= 4`, which creates `vendor-bootconfig.img` to contain
-            `VENDOR_BOOTCONFIG if `build_vendor_boot`.
+          - if `build_vendor_boot`, it assumes `VENDOR_BOOTCONFIG` is set and
+            `BOOT_IMAGE_HEADER_VERSION >= 4`, which creates `vendor-bootconfig.img` to contain
+            `VENDOR_BOOTCONFIG` .
           - The list contains `dtb.img`
         build_initramfs: Whether to build initramfs. Keep in sync with `BUILD_INITRAMFS`.
         build_system_dlkm: Whether to build system_dlkm.img an image with GKI modules.
